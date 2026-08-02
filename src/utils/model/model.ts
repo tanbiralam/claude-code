@@ -348,6 +348,10 @@ export function renderModelSetting(setting: ModelName | ModelAlias): string {
  */
 export function getPublicModelDisplayName(model: ModelName): string | null {
   switch (model) {
+    case 'MiniMax-M3':
+      return 'MiniMax M3'
+    case 'MiniMax-M2.7':
+      return 'MiniMax M2.7'
     case getModelStrings().opus46:
       return 'Opus 4.6'
     case getModelStrings().opus46 + '[1m]':
@@ -425,6 +429,9 @@ export function renderModelName(model: ModelName): string {
 export function getPublicModelName(model: ModelName): string {
   const publicName = getPublicModelDisplayName(model)
   if (publicName) {
+    if (publicName.startsWith('MiniMax ')) {
+      return publicName
+    }
     return `Claude ${publicName}`
   }
   return `Claude (${model})`
@@ -578,6 +585,12 @@ export function getMarketingNameForModel(modelId: string): string | undefined {
 
   if (canonical.includes('claude-opus-4-6')) {
     return has1m ? 'Opus 4.6 (with 1M context)' : 'Opus 4.6'
+  }
+  if (canonical.includes('minimax-m3')) {
+    return 'MiniMax M3'
+  }
+  if (canonical.includes('minimax-m2.7')) {
+    return 'MiniMax M2.7'
   }
   if (canonical.includes('claude-opus-4-5')) {
     return 'Opus 4.5'
