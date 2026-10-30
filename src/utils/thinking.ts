@@ -101,6 +101,9 @@ export function modelSupportsThinking(model: string): boolean {
   // launch DRI and research. This can greatly affect model quality and bashing.
   const canonical = getCanonicalName(model)
   const provider = getAPIProvider()
+  if (provider === 'minimax' && canonical.startsWith('minimax-m')) {
+    return true
+  }
   // 1P and Foundry: all Claude 4+ models (including Haiku 4.5)
   if (provider === 'foundry' || provider === 'firstParty') {
     return !canonical.includes('claude-3-')
@@ -116,6 +119,14 @@ export function modelSupportsAdaptiveThinking(model: string): boolean {
     return supported3P
   }
   const canonical = getCanonicalName(model)
+  // Current MiniMax M3-family models support adaptive thinking. Preserve the
+  // legacy M2.7 ID as fixed-budget only.
+  if (canonical === 'minimax-m3.1-flash' || canonical === 'minimax-m3') {
+    return true
+  }
+  if (canonical.startsWith('minimax-m')) {
+    return false
+  }
   // Supported by a subset of Claude 4 models
   if (canonical.includes('opus-4-6') || canonical.includes('sonnet-4-6')) {
     return true

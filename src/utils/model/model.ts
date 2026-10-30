@@ -23,7 +23,7 @@ import { getModelStrings, resolveOverriddenModel } from './modelStrings.js'
 import { formatModelPricing, getOpus46CostTier } from '../modelCost.js'
 import { getSettings_DEPRECATED } from '../settings/settings.js'
 import type { PermissionMode } from '../permissions/PermissionMode.js'
-import { getAPIProvider } from './providers.js'
+import { getAPIProvider, MINIMAX_FLASH_MODEL } from './providers.js'
 import { LIGHTNING_BOLT } from '../../constants/figures.js'
 import { isModelAllowed } from './modelAllowlist.js'
 import { type ModelAlias, isModelAlias } from './aliases.js'
@@ -106,6 +106,9 @@ export function getDefaultOpusModel(): ModelName {
   if (process.env.ANTHROPIC_DEFAULT_OPUS_MODEL) {
     return process.env.ANTHROPIC_DEFAULT_OPUS_MODEL
   }
+  if (getAPIProvider() === 'minimax') {
+    return MINIMAX_FLASH_MODEL
+  }
   // 3P providers (Bedrock, Vertex, Foundry) — kept as a separate branch
   // even when values match, since 3P availability lags firstParty and
   // these will diverge again at the next model launch.
@@ -176,6 +179,9 @@ export function getRuntimeMainLoopModel(params: {
  * @returns The default model setting to use
  */
 export function getDefaultMainLoopModelSetting(): ModelName | ModelAlias {
+  if (getAPIProvider() === 'minimax') {
+    return getDefaultSonnetModel()
+  }
   // Ants default to defaultModel from flag config, or Opus 1M if not configured
   if (process.env.USER_TYPE === 'ant') {
     return (
@@ -286,6 +292,9 @@ export function getCanonicalName(fullModelName: ModelName): ModelShortName {
 export function getClaudeAiUserDefaultModelDescription(
   fastMode = false,
 ): string {
+  if (getAPIProvider() === 'minimax') {
+    return 'MiniMax M3.1 Flash · Recommended for everyday tasks'
+  }
   if (isMaxSubscriber() || isTeamPremiumSubscriber()) {
     if (isOpus1mMergeEnabled()) {
       return `Opus 4.6 with 1M context · Most capable for complex work${fastMode ? getOpus46PricingSuffix(true) : ''}`
@@ -348,6 +357,12 @@ export function renderModelSetting(setting: ModelName | ModelAlias): string {
  */
 export function getPublicModelDisplayName(model: ModelName): string | null {
   switch (model) {
+    case MINIMAX_FLASH_MODEL:
+      return 'MiniMax M3.1 Flash'
+    case 'MiniMax-M3':
+      return 'MiniMax M3'
+    case 'MiniMax-M2.7':
+      return 'MiniMax M2.7'
     case getModelStrings().opus46:
       return 'Opus 4.6'
     case getModelStrings().opus46 + '[1m]':
@@ -425,6 +440,9 @@ export function renderModelName(model: ModelName): string {
 export function getPublicModelName(model: ModelName): string {
   const publicName = getPublicModelDisplayName(model)
   if (publicName) {
+    if (publicName.startsWith('MiniMax ')) {
+      return publicName
+    }
     return `Claude ${publicName}`
   }
   return `Claude (${model})`
@@ -447,6 +465,8 @@ export function parseUserSpecifiedModel(
 ): ModelName {
   const modelInputTrimmed = modelInput.trim()
   const normalizedModel = modelInputTrimmed.toLowerCase()
+  // Preserve explicit MiniMax IDs, including saved legacy IDs, byte-for-byte.
+  if (normalizedModel.startsWith('minimax-')) return modelInputTrimmed
 
   const has1mTag = has1mContext(normalizedModel)
   const modelString = has1mTag
@@ -578,6 +598,15 @@ export function getMarketingNameForModel(modelId: string): string | undefined {
 
   if (canonical.includes('claude-opus-4-6')) {
     return has1m ? 'Opus 4.6 (with 1M context)' : 'Opus 4.6'
+  }
+  if (canonical === 'minimax-m3.1-flash') {
+    return 'MiniMax M3.1 Flash'
+  }
+  if (canonical === 'minimax-m3') {
+    return 'MiniMax M3'
+  }
+  if (canonical.includes('minimax-m2.7')) {
+    return 'MiniMax M2.7'
   }
   if (canonical.includes('claude-opus-4-5')) {
     return 'Opus 4.5'

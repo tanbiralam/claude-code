@@ -14,7 +14,11 @@ import {
 } from '../modelCost.js'
 import { getSettings_DEPRECATED } from '../settings/settings.js'
 import { checkOpus1mAccess, checkSonnet1mAccess } from './check1mAccess.js'
-import { getAPIProvider } from './providers.js'
+import {
+  getAPIProvider,
+  MINIMAX_FLASH_MODEL,
+  MINIMAX_M3_MODEL,
+} from './providers.js'
 import { isModelAllowed } from './modelAllowlist.js'
 import {
   getCanonicalName,
@@ -284,6 +288,22 @@ function getModelOptionsBase(fastMode = false): ModelOption[] {
       getSonnet46Option(),
       getSonnet46_1MOption(),
       getHaiku45Option(),
+    ]
+  }
+
+  if (getAPIProvider() === 'minimax') {
+    return [
+      getDefaultOptionForUser(fastMode),
+      {
+        value: MINIMAX_FLASH_MODEL,
+        label: 'MiniMax M3.1 Flash (recommended)',
+        description: '1M context · up to 524K output',
+      },
+      {
+        value: MINIMAX_M3_MODEL,
+        label: 'MiniMax M3',
+        description: '1M context · up to 524K output',
+      },
     ]
   }
 

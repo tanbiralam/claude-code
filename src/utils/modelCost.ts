@@ -88,6 +88,30 @@ export const COST_HAIKU_45 = {
 
 const DEFAULT_UNKNOWN_MODEL_COST = COST_TIER_5_25
 
+const COST_MINIMAX_FLASH = {
+  inputTokens: 0.15,
+  outputTokens: 0.6,
+  promptCacheWriteTokens: 0.15,
+  promptCacheReadTokens: 0.015,
+  webSearchRequests: 0.01,
+} as const satisfies ModelCosts
+
+const COST_MINIMAX_M3_STANDARD = {
+  inputTokens: 0.3,
+  outputTokens: 1.2,
+  promptCacheWriteTokens: 0.3,
+  promptCacheReadTokens: 0.06,
+  webSearchRequests: 0.01,
+} as const satisfies ModelCosts
+
+const COST_MINIMAX_M3_LONG = {
+  inputTokens: 0.6,
+  outputTokens: 2.4,
+  promptCacheWriteTokens: 0.6,
+  promptCacheReadTokens: 0.12,
+  webSearchRequests: 0.01,
+} as const satisfies ModelCosts
+
 /**
  * Get the cost tier for Opus 4.6 based on fast mode.
  */
@@ -123,6 +147,9 @@ export const MODEL_COSTS: Record<ModelShortName, ModelCosts> = {
     COST_TIER_5_25,
   [firstPartyNameToCanonical(CLAUDE_OPUS_4_6_CONFIG.firstParty)]:
     COST_TIER_5_25,
+  'minimax-m3.1-flash': COST_MINIMAX_FLASH,
+  'minimax-m3': COST_MINIMAX_M3_STANDARD,
+  'minimax-m2.7': COST_MINIMAX_M3_STANDARD,
 }
 
 /**
@@ -150,6 +177,10 @@ export function getModelCosts(model: string, usage: Usage): ModelCosts {
   ) {
     const isFastMode = usage.speed === 'fast'
     return getOpus46CostTier(isFastMode)
+  }
+
+  if (shortName === 'minimax-m3' && usage.input_tokens > 512_000) {
+    return COST_MINIMAX_M3_LONG
   }
 
   const costs = MODEL_COSTS[shortName]

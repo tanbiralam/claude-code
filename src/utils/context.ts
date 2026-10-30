@@ -71,6 +71,13 @@ export function getContextWindowForModel(
     return 1_000_000
   }
 
+  // MiniMax M3-family text models expose a 1M context window through the
+  // Anthropic-compatible endpoint without requiring the Claude beta header.
+  const canonical = getCanonicalName(model)
+  if (canonical.startsWith('minimax-m3') || canonical === 'minimax-m2.7') {
+    return is1mContextDisabled() ? MODEL_CONTEXT_WINDOW_DEFAULT : 1_000_000
+  }
+
   const cap = getModelCapability(model)
   if (cap?.max_input_tokens && cap.max_input_tokens >= 100_000) {
     if (
@@ -164,7 +171,13 @@ export function getModelMaxOutputTokens(model: string): {
 
   const m = getCanonicalName(model)
 
-  if (m.includes('opus-4-6')) {
+  if (m === 'minimax-m3.1-flash' || m === 'minimax-m3') {
+    defaultTokens = MAX_OUTPUT_TOKENS_DEFAULT
+    upperLimit = 524_288
+  } else if (m === 'minimax-m2.7') {
+    defaultTokens = MAX_OUTPUT_TOKENS_DEFAULT
+    upperLimit = 524_288
+  } else if (m.includes('opus-4-6')) {
     defaultTokens = 64_000
     upperLimit = 128_000
   } else if (m.includes('sonnet-4-6')) {
