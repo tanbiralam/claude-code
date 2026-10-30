@@ -119,9 +119,9 @@ export function modelSupportsAdaptiveThinking(model: string): boolean {
     return supported3P
   }
   const canonical = getCanonicalName(model)
-  // Flash supports adaptive thinking; M3 and the preserved M2.7 legacy ID
-  // use fixed budgets instead of being misclassified as adaptive models.
-  if (canonical === 'minimax-m3.1-flash') {
+  // Current MiniMax M3-family models support adaptive thinking. Preserve the
+  // legacy M2.7 ID as fixed-budget only.
+  if (canonical === 'minimax-m3.1-flash' || canonical === 'minimax-m3') {
     return true
   }
   if (canonical.startsWith('minimax-m')) {
